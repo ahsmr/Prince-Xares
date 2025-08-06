@@ -12,8 +12,10 @@ import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
 import net.dv8tion.jda.api.entities.channel.unions.AudioChannelUnion;
+import net.dv8tion.jda.api.events.guild.GuildJoinEvent;
 import net.dv8tion.jda.api.events.guild.GuildLeaveEvent;
 import net.dv8tion.jda.api.events.guild.member.GuildMemberJoinEvent;
+import net.dv8tion.jda.api.events.guild.member.GuildMemberRemoveEvent;
 import net.dv8tion.jda.api.events.guild.voice.GuildVoiceUpdateEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
@@ -859,6 +861,19 @@ public class Main extends ListenerAdapter
         }
     }
     
+    /**
+     * Deletes the user's data from the server !
+     */
+    @Override 
+    public void onGuildMemberRemove(GuildMemberRemoveEvent event) {
+    	String guildId = event.getGuild().getId();
+        String userId = event.getUser().getId();
+        VaultDAO vaultDAO = new VaultDAO(guildId);
+        vaultDAO.deleteUserData(userId);;
+        
+        
+    }
+    
     /*
      * Override methode from JDA library
      */
@@ -1007,18 +1022,21 @@ public class Main extends ListenerAdapter
         	
             
         }
-        
-        
-        
-      //making sure that each server has a db
         JDA jda = event.getJDA();
         for (Guild guild : jda.getGuilds()) {  
             VaultDAO dao = new VaultDAO(guild.getId());
         }
-
-        
     }
    
+    
+    @Override 
+    public void onGuildJoin(GuildJoinEvent event) { //Go ahead and make a database
+    	 //making sure that each server has a db
+        JDA jda = event.getJDA();
+        for (Guild guild : jda.getGuilds()) {  
+            VaultDAO dao = new VaultDAO(guild.getId());
+        }
+    }
     /*
      * Override methode from JDA library
      */
@@ -1027,26 +1045,6 @@ public class Main extends ListenerAdapter
         String guildId = event.getGuild().getId();
         VaultDAO dao = new VaultDAO(guildId);
         dao.deleteDatabaseFile();  // 💣 deletes the actual SQLite file
-    }
-    
-    /*
-     * Override methode from JDA library
-     */
-    @Override
-    public void onGuildVoiceUpdate(GuildVoiceUpdateEvent event) {
-        Member member = event.getMember();
-
-        // User joins a voice channel
-        if (event.getChannelJoined() != null) {
-            AudioChannelUnion joined = event.getChannelJoined();
-            System.out.println(member.getEffectiveName() + " joined voice channel: " + joined.getName() + " at " + Instant.now());
-        }
-
-        // User leaves a voice channel
-        if (event.getChannelLeft() != null) {
-            AudioChannelUnion left = event.getChannelLeft();
-            System.out.println(member.getEffectiveName() + " left voice channel: " + left.getName() + " at " + Instant.now());
-        }
     }
     
     /*

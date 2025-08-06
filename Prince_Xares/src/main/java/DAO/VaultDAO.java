@@ -321,6 +321,35 @@ public class VaultDAO {
         }
     }
 
+    public void deleteUserData(String userId) {
+        try (Connection conn = connect()) {
+            conn.setAutoCommit(false); // Transaction ensures both deletions happen atomically
+
+            try (PreparedStatement deleteCoins = conn.prepareStatement(
+                         "DELETE FROM coins WHERE user_id = ? AND guild_id = ?");
+                 PreparedStatement deleteCrystara = conn.prepareStatement(
+                         "DELETE FROM crystara WHERE user_id = ? AND guild_id = ?")) {
+
+                // Delete from coins
+                deleteCoins.setString(1, userId);
+                deleteCoins.setString(2, guildId);
+                deleteCoins.executeUpdate();
+
+                // Delete from crystara
+                deleteCrystara.setString(1, userId);
+                deleteCrystara.setString(2, guildId);
+                deleteCrystara.executeUpdate();
+
+                conn.commit();
+            } catch (SQLException e) {
+                conn.rollback();
+                throw e;
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
 
     
     public void deleteDatabaseFile() {
