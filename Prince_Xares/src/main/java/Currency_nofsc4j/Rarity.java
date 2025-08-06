@@ -1,4 +1,4 @@
-package Currency;
+package Currency_nofsc4j;
 
 public enum Rarity {
 	    COMMON,

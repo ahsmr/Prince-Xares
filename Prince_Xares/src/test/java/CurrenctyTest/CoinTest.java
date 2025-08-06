@@ -5,10 +5,10 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import org.junit.jupiter.api.Test;
 
-import Currency.Rarity;
-import Currency.Vault;
-import Currency.Xarin;
-import Currency.Zyra;
+import Currency_nofsc4j.Rarity;
+import Currency_nofsc4j.Vault;
+import Currency_nofsc4j.Xarin;
+import Currency_nofsc4j.Zyra;
 
 class CoinTest {
 	

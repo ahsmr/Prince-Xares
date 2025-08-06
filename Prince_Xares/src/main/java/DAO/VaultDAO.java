@@ -4,12 +4,12 @@ import java.io.File;
 import java.sql.*;
 import java.util.*;
 
-import Currency.Coin;
-import Currency.GuildInfo;
-import Currency.Rarity;
-import Currency.Vault;
-import Currency.Xarin;
-import Currency.Zyra;
+import Currency_nofsc4j.Coin;
+import Currency_nofsc4j.GuildInfo;
+import Currency_nofsc4j.Rarity;
+import Currency_nofsc4j.Vault;
+import Currency_nofsc4j.Xarin;
+import Currency_nofsc4j.Zyra;
 
 public class VaultDAO {
     private final String dbPath;

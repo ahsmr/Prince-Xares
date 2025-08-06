@@ -1,4 +1,4 @@
-package Currency;
+package Currency_nofsc4j;
 
 import java.util.ArrayList;
 import java.util.List;

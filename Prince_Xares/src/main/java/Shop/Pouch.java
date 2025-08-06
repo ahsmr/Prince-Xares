@@ -7,10 +7,10 @@ import java.util.List;
 import java.util.Random;
 import java.util.Set;
 
-import Currency.Coin;
-import Currency.Rarity;
-import Currency.Xarin;
-import Currency.Zyra;
+import Currency_nofsc4j.Coin;
+import Currency_nofsc4j.Rarity;
+import Currency_nofsc4j.Xarin;
+import Currency_nofsc4j.Zyra;
 
 import java.util.Map;
 import java.util.Random;
