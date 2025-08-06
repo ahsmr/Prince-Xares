@@ -45,8 +45,7 @@ public class VaultDAO {
                 amount INTEGER NOT NULL,
                 PRIMARY KEY (user_id, guild_id)
             );
-        """;
-        
+        """;       
 
         String guildInfoSql = """
             CREATE TABLE IF NOT EXISTS guild_info (

@@ -13,6 +13,11 @@ public class Vault {
     private String guildId;
     private String userId;
 
+    /**
+     * @pre | guildId != null && userId != null
+     * @post | will make a db if not exists or get the data from the one that already exists!
+     * 		 | will load the user's coins if existed!
+     */
     public Vault(String guildId, String userId) {
         this.guildId = guildId;
         this.userId = userId;
@@ -20,15 +25,24 @@ public class Vault {
         loadVault();
     }
     
-    
+    /**  
+     * @return | userId of the Vault's Owner
+     */
     public String getUserId() {
     	return userId;
     }
     
+    /**
+     * 
+     * @return | guildId where this Vault is at.
+     */
     public String getGuildId() {
     	return guildId;
     }
 
+    /**
+     * Help function for loading the coins if they exist
+     */
     private void loadVault() {
         coins = dao.loadCoins(userId, guildId);
         for (Coin coin : coins) {
@@ -36,6 +50,10 @@ public class Vault {
         }
     }
 
+    /**
+     * @mutates_properties | getCoins(),coin.getVault()
+     * @important | saves the coins directly !
+     */
     public void addCoin(Coin coin) {
         if (!coins.contains(coin)) {
             coins.add(coin);
@@ -43,7 +61,10 @@ public class Vault {
             dao.saveCoin(userId, guildId, coin);
         }
     }
-    
+    /**
+     * @mutates_properties | getCoins(),coin.getVault()
+     * @important | saves the coins directly !
+     */
     public void removeCoin(String coinId) {
         // First, find the coin in the vault
         Coin toRemove = null;
@@ -56,17 +77,23 @@ public class Vault {
 
         // If found, remove from vault and database
         if (toRemove != null) {
+        	toRemove.vault = null;
             coins.remove(toRemove);
             dao.removeCoin(coinId);
         }
     }
     
     public void removeAllCoinsFrom(String userId) {
+    	coins.stream().forEach(coin -> coin.vault = null);
     	coins.clear();
     	dao.deleteAllCoinsForUser(userId);
     }
 
 
+    /**
+     * @post | get All coins regardless of the type
+     * @post | result.stream().allMatch(coin -> coin.vault.equals(this))
+     */
     public List<Coin> getCoins() {
         return Collections.unmodifiableList(coins);
     }
@@ -87,6 +114,7 @@ public class Vault {
         return Collections.unmodifiableList(xarins);
     }
     
+
     public void saveDirtyCoins() {
         for (Coin coin : coins) {
             if (coin.isDirty()) {
