@@ -257,7 +257,7 @@ public class Main extends ListenerAdapter
             		event.reply("Level Range for a coin is 1-10.").setEphemeral(true).queue();
             		return;
             	}
-            	if (targetVault.getVault().size() >= 10) {
+            	if (targetVault.getCoins().size() >= 10) {
             		event.reply("You can't add more coins!").setEphemeral(true).queue();;
             		return;
             	}
@@ -298,7 +298,7 @@ public class Main extends ListenerAdapter
                 		break;
          
                 	}
-                	else if (targetVault == null || targetVault.getVault().isEmpty()) {
+                	else if (targetVault == null || targetVault.getCoins().isEmpty()) {
                         event.reply("💰 " + targetUser.getEffectiveName() + "'s vault is empty.").setEphemeral(true).queue();
                         break;
                     } else {
@@ -329,7 +329,7 @@ public class Main extends ListenerAdapter
                 		break;
                 	}
                 	String lCoinId = event.getOption("id").getAsString();
-                	for (Coin coin : targetVault.getVault()) {
+                	for (Coin coin : targetVault.getCoins()) {
                 	    if (coin.getCoinId().equals(lCoinId)) {
                 	        lCoin = coin;
                 	        break;
@@ -383,7 +383,7 @@ public class Main extends ListenerAdapter
                 	
                 	
                 case "view":
-                    if (targetVault == null || targetVault.getVault().isEmpty()) {
+                    if (targetVault == null || targetVault.getCoins().isEmpty()) {
                         event.reply("💰 " + targetUser.getEffectiveName() + "'s vault is empty.").setEphemeral(true).queue();
                         break;
                     } else {
@@ -409,7 +409,7 @@ public class Main extends ListenerAdapter
                 	if (isWiseGod || isAdmin || event.getMember().equals(targetUser)) {
 
                 	    Coin rCoin = null;
-                	    for (Coin coin : targetVault.getVault()) {
+                	    for (Coin coin : targetVault.getCoins()) {
                 	        if (coin.getCoinId().equals(coinId)) {
                 	            rCoin = coin;
                 	            break;
@@ -481,12 +481,12 @@ public class Main extends ListenerAdapter
         	 Role role8 = event.getGuild().getRoleById("1396835220304564264");
         	 Role role9 = event.getGuild().getRoleById("1396835368203976774");
         	 Role role10 = event.getGuild().getRoleById("1396834896579919882");
-        	int xarinCount = (int) targetVault.getVault().stream()
+        	int xarinCount = (int) targetVault.getCoins().stream()
     			    .filter(coin -> coin instanceof Xarin)          // Filter by Zyra class
     			    .filter(coin -> coin.getRarity().equals(Rarity.LEGENDARY)) // Filter by legendary rarity (case-insensitive)
     			    .filter(coin -> coin.getLevel() == 10)
     			    .count();
-    		int zyraCount = (int) targetVault.getVault().stream()
+    		int zyraCount = (int) targetVault.getCoins().stream()
     			    .filter(coin -> coin instanceof Zyra)          // Filter by Zyra class
     			    .filter(coin -> coin.getRarity().equals(Rarity.LEGENDARY)) // Filter by legendary rarity (case-insensitive)
     			    .filter(coin -> coin.getLevel() == 10)
@@ -518,7 +518,7 @@ public class Main extends ListenerAdapter
         	}
         	else if (buttonId.equals("role2") && role2 != null) {
         		if (zyraCount >=1) {
-        			String zyraId = targetVault.getVault().stream()
+        			String zyraId = targetVault.getCoins().stream()
         				    .filter(coin -> coin.getRarity().equals(Rarity.LEGENDARY))
         				    .filter(coin -> coin instanceof Zyra)
         				    .filter(coin -> coin.getLevel() == 10)
@@ -541,7 +541,7 @@ public class Main extends ListenerAdapter
         	
         	else if (buttonId.equals("role3") && role3 != null) {
         		if (xarinCount >=1) {
-        			String xarinId = targetVault.getVault().stream()
+        			String xarinId = targetVault.getCoins().stream()
         				    .filter(coin -> coin.getRarity().equals(Rarity.LEGENDARY))
         				    .filter(coin -> coin instanceof Xarin)
         				    .filter(coin -> coin.getLevel() == 10)
@@ -562,7 +562,7 @@ public class Main extends ListenerAdapter
         	}
         	
         	else if (buttonId.equals("role4") && role4 != null) {
-        		String xarinId = targetVault.getVault().stream()
+        		String xarinId = targetVault.getCoins().stream()
     				    .filter(coin -> coin.getRarity().equals(Rarity.LEGENDARY))
     				    .filter(coin -> coin instanceof Xarin)
     				    .filter(coin -> coin.getLevel() == 1)
@@ -570,7 +570,7 @@ public class Main extends ListenerAdapter
     				    .findFirst()
     				    .orElse(null);  // returns null if no match found
         		
-        		String zyraId = targetVault.getVault().stream()
+        		String zyraId = targetVault.getCoins().stream()
     				    .filter(coin -> coin.getRarity().equals(Rarity.LEGENDARY))
     				    .filter(coin -> coin instanceof Zyra)
     				    .filter(coin -> coin.getLevel() == 1)
@@ -594,7 +594,7 @@ public class Main extends ListenerAdapter
         	}
         	
         	else if (buttonId.equals("role5") && role5 != null) {
-        		String xarinId = targetVault.getVault().stream()
+        		String xarinId = targetVault.getCoins().stream()
     				    .filter(coin -> coin.getRarity().equals(Rarity.LEGENDARY))
     				    .filter(coin -> coin instanceof Xarin)
     				    .filter(coin -> coin.getLevel() == 1)
@@ -602,7 +602,7 @@ public class Main extends ListenerAdapter
     				    .findFirst()
     				    .orElse(null);  // returns null if no match found
         		
-        		String zyraId = targetVault.getVault().stream()
+        		String zyraId = targetVault.getCoins().stream()
     				    .filter(coin -> coin.getRarity().equals(Rarity.LEGENDARY))
     				    .filter(coin -> coin instanceof Zyra)
     				    .filter(coin -> coin.getLevel() == 1)
@@ -625,7 +625,7 @@ public class Main extends ListenerAdapter
         	}
         	
         	else if (buttonId.equals("role6") && role6 != null) {
-        		String xarinId = targetVault.getVault().stream()
+        		String xarinId = targetVault.getCoins().stream()
     				    .filter(coin -> coin.getRarity().equals(Rarity.LEGENDARY))
     				    .filter(coin -> coin instanceof Xarin)
     				    .filter(coin -> coin.getLevel() == 1)
@@ -633,7 +633,7 @@ public class Main extends ListenerAdapter
     				    .findFirst()
     				    .orElse(null);  // returns null if no match found
         		
-        		String zyraId = targetVault.getVault().stream()
+        		String zyraId = targetVault.getCoins().stream()
     				    .filter(coin -> coin.getRarity().equals(Rarity.LEGENDARY))
     				    .filter(coin -> coin instanceof Zyra)
     				    .filter(coin -> coin.getLevel() == 1)
@@ -772,7 +772,7 @@ public class Main extends ListenerAdapter
         	String authorId = parts[1];
             if (!authorId.equals(userId)) return; // only allow same user
             
-            if (targetVault.getVault().size() >= 10) {
+            if (targetVault.getCoins().size() >= 10) {
             	event.reply("You have reached the maximum amount of Coins in your Vault!").setEphemeral(true).queue();
             	return;
             }
@@ -803,13 +803,13 @@ public class Main extends ListenerAdapter
             if (buttonId.startsWith("accept_coins:")) {
             	
             	
-            	if (targetVault.getVault().size() >= 10) {
+            	if (targetVault.getCoins().size() >= 10) {
                 	event.reply("You have reached the maximum amount of Coins in your Vault!").setEphemeral(true).queue();
                 	return;
                 }
             	
-            	else if ( targetVault.getVault().size()+5 > 10) {
-            		event.reply("You can't add more than "+(10 -targetVault.getVault().size()) +" Coins to your Vault!" ).setEphemeral(true).queue();
+            	else if ( targetVault.getCoins().size()+5 > 10) {
+            		event.reply("You can't add more than "+(10 -targetVault.getCoins().size()) +" Coins to your Vault!" ).setEphemeral(true).queue();
             		return;
             	}
             	
@@ -1291,7 +1291,7 @@ public class Main extends ListenerAdapter
      * However the generated file won't be saved anyWhere
      */
     private void showVault(InteractionHook channel, Vault vault, String username, String avatarUrl) {
-        List<Coin> coins = vault.getVault();
+        List<Coin> coins = vault.getCoins();
 
         if (coins.isEmpty()) {
             channel.sendMessage("Your vault is empty.").setEphemeral(true).queue();
@@ -1323,7 +1323,7 @@ public class Main extends ListenerAdapter
      * Only with permission!
      */
     private String formatVaultAdmin(Vault vault) {
-        List<Coin> coins = vault.getVault();
+        List<Coin> coins = vault.getCoins();
         if (coins.isEmpty()) {
             return "Your vault is empty.";
         }

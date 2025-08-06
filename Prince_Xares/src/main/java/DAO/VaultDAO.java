@@ -258,7 +258,7 @@ public class VaultDAO {
     }
 
     public void saveVault(Vault vault) {
-        for (Coin coin : vault.getVault()) {
+        for (Coin coin : vault.getCoins()) {
             saveOrUpdateCoin(vault.getUserId(), vault.getGuildId(), coin);
         }
     }

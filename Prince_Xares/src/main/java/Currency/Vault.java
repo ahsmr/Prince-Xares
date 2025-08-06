@@ -8,7 +8,7 @@ import DAO.VaultDAO;
 
 
 public class Vault {
-    private List<Coin> vault = new ArrayList<>();
+    List<Coin> coins = new ArrayList<>();
     private VaultDAO dao;
     private String guildId;
     private String userId;
@@ -30,15 +30,15 @@ public class Vault {
     }
 
     private void loadVault() {
-        vault = dao.loadCoins(userId, guildId);
-        for (Coin coin : vault) {
+        coins = dao.loadCoins(userId, guildId);
+        for (Coin coin : coins) {
             coin.vault = this;
         }
     }
 
     public void addCoin(Coin coin) {
-        if (!vault.contains(coin)) {
-            vault.add(coin);
+        if (!coins.contains(coin)) {
+            coins.add(coin);
             coin.vault = this;
             dao.saveCoin(userId, guildId, coin);
         }
@@ -47,7 +47,7 @@ public class Vault {
     public void removeCoin(String coinId) {
         // First, find the coin in the vault
         Coin toRemove = null;
-        for (Coin coin : vault) {
+        for (Coin coin : coins) {
             if (coin.getCoinId().equals(coinId)) {
                 toRemove = coin;
                 break;
@@ -56,24 +56,24 @@ public class Vault {
 
         // If found, remove from vault and database
         if (toRemove != null) {
-            vault.remove(toRemove);
+            coins.remove(toRemove);
             dao.removeCoin(coinId);
         }
     }
     
     public void removeAllCoinsFrom(String userId) {
-    	vault.clear();
+    	coins.clear();
     	dao.deleteAllCoinsForUser(userId);
     }
 
 
-    public List<Coin> getVault() {
-        return Collections.unmodifiableList(vault);
+    public List<Coin> getCoins() {
+        return Collections.unmodifiableList(coins);
     }
 
     public List<Zyra> getZyras() {
         List<Zyra> zyras = new ArrayList<>();
-        for (Coin c : vault) {
+        for (Coin c : coins) {
             if (c instanceof Zyra) zyras.add((Zyra) c);
         }
         return Collections.unmodifiableList(zyras);
@@ -81,14 +81,14 @@ public class Vault {
 
     public List<Xarin> getXarins() {
         List<Xarin> xarins = new ArrayList<>();
-        for (Coin c : vault) {
+        for (Coin c : coins) {
             if (c instanceof Xarin) xarins.add((Xarin) c);
         }
         return Collections.unmodifiableList(xarins);
     }
     
     public void saveDirtyCoins() {
-        for (Coin coin : vault) {
+        for (Coin coin : coins) {
             if (coin.isDirty()) {
                 dao.saveOrUpdateCoin(userId, guildId, coin);
                 coin.markClean();
