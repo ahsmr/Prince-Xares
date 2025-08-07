@@ -130,7 +130,6 @@ public class Main extends ListenerAdapter
     	pouchShopMessageId = info.getpouchShopMessageId();
     	roleShopMessageId = info.getroleShopMessageId();
     	shopChannelId = info.getShopChannelId();
-    	System.out.println(shopChannelId + pouchShopMessageId);
     	introChannelId = info.getIntroChannelId();
     	controleChannelId = info.getcontroleChannelId();
     	List<String> roles = info.getRoleIds();
@@ -1001,21 +1000,16 @@ public class Main extends ListenerAdapter
             loadGuildInfo(guildId);
             loadRoles(guild);
         }
-    	System.out.println(1);
     	TextChannel shopChannel = null;
-    	System.out.println(shopChannelId);
     	if(shopChannelId != null) {
-            shopChannel = event.getJDA().getTextChannelById(shopChannelId);
-            System.out.println(shopChannel);
-    	}
+            shopChannel = event.getJDA().getTextChannelById(shopChannelId);    	}
     	
         if (shopChannel != null) {
             Button xarinButton = Button.secondary("buy_xarin", "Buy Xarin Pouch");
             Button zyraButton = Button.secondary("buy_zyra", "Buy Zyra Pouch");
             Button randomButton = Button.secondary("buy_random", "Buy Random Pouch");
-            System.out.println(2);
+            
             List<Role> roles = Arrays.asList(role1, role2, role3, role4, role5, role6, role7, role8, role9, role10);
-
             List<Button> buttons = new ArrayList<>();
 
             for (int i = 0; i < roles.size(); i++) {
@@ -1023,8 +1017,8 @@ public class Main extends ListenerAdapter
                 if (role != null) {
                     String buttonId = "role" + (i + 1);
                     buttons.add(Button.secondary(buttonId, role.getName()));
-                }}
-            System.out.println(3);
+                }}            
+            
             
             String pouchShopMessage = """
             		🔮 **Welcome, seeker, to the Arcane Pouch Emporium!**
@@ -1043,52 +1037,75 @@ public class Main extends ListenerAdapter
             		🛍️ **Choose wisely, and may the coins guide your destiny.**
             		""";
 
-            
-            String roleShopMessage = """
-            		🏰 **Welcome, traveler, to the Hall of Titles**
+         // Emojis, names, and descriptions for each role slot
+         String[] emojis = {
+             "🔍", "😎", "🧠", "👴", "👑", "♾️", "🌿", "🔥", "⚒️", "🧍‍♂️"
+         };
 
-            		Here you may claim powerful roles — but each title comes with a price. Prove your worth, and the realm shall recognize you.
+         String[] requirements = {
+             "_5x **Legendary Level 10 Xarin**, 5x **Legendary Level 10 Zyra**_",
+             "_1x **Legendary Level 10 Zyra Coin**_",
+             "_1x **Legendary Level 10 Xarin Coin**_",
+             "_1x **Legendary Level 1 Xarin**, 1x **Legendary Level 1 Zyra**, 5000 💎𝓒 _",
+             "_1x **Legendary Level 1 Xarin**, 1x **Legendary Level 1 Zyra**_",
+             "_1x **Legendary Level 1 Coin** (any type)_",
+             "_**4000** 💎𝓒_",
+             "_**4000** 💎𝓒_",
+             "_**2000** 💎𝓒_",
+             "_Free to claim_"
+         };
 
-            		---
+         String[] flavorTexts = {
+             "> Guardians of the vaults, trusted with secrets few may hold.",
+             "> Only the chillest may wield this title.",
+             "> Youthful and brilliant. A rare combination.",
+             "> The oldest of powers... only few remember your name.",
+             "> You walk among mortals, but you are far beyond.",
+             "> Death has no claim on you.",
+             "> One with nature, fast and graceful.",
+             "> Fire, chaos, and shadows obey your will.",
+             "> Master of craftsmanship and strongholds.",
+             "> Versatile, balanced, and ever-evolving."
+         };
 
-            		🔍 **Vault Viewer** – _5x **Legendary Level 10 Xarin**, 5x **Legendary Level 10 Zyra**_  
-            		> Guardians of the vaults, trusted with secrets few may hold.
+         // Start building the message
+         StringBuilder roleMessage = new StringBuilder();
 
-            		😎 **Cool One** – _1x **Legendary Level 10 Zyra Coin**_  
-            		> Only the chillest may wield this title.
+         roleMessage.append("""
+         🏰 **Welcome, traveler, to the Hall of Titles**
 
-            		🧠 **Wise Child** – _1x **Legendary Level 10 Xarin Coin**_  
-            		> Youthful and brilliant. A rare combination.
+         Here you may claim powerful roles — but each title comes with a price. Prove your worth, and the realm shall recognize you.
 
-            		👴 **Elder God** – _1x **Legendary Level 1 Xarin**, 1x **Legendary Level 1 Zyra**, 5000 💎𝓒 _  
-            		> The oldest of powers... only few remember your name.
+         ---
 
-            		👑 **God** – _1x **Legendary Level 1 Xarin**, 1x **Legendary Level 1 Zyra**_  
-            		> You walk among mortals, but you are far beyond.
+         """);
 
-            		♾️ **Immortal** – _1x **Legendary Level 1 Coin** (any type)_  
-            		> Death has no claim on you.
+         // Dynamically add each non-null role
+         for (int i = 0; i < roles.size(); i++) {
+             Role role = roles.get(i);
+             if(role != null) {
+            	 roleMessage.append(emojis[i]).append(" **").append(role.getName()).append("** – ")
+                 .append(requirements[i]).append("\n")
+                 .append(flavorTexts[i]).append("\n\n");
+             }
+             
+         }
 
-            		🌿 **Elf** – _**4000** 💎𝓒_   
-            		> One with nature, fast and graceful.
+         // Add the footer
+         roleMessage.append("""
+         ---
 
-            		🔥 **Demon** – _**4000** 💎𝓒_ 
-            		> Fire, chaos, and shadows obey your will.
+         🎯 **How to claim a role**  
+         Click the button below your chosen role. The keepers of the vault will inspect your worth.
 
-            		⚒️ **Dwarf** – _**2000** 💎𝓒_ 
-            		> Master of craftsmanship and strongholds.
-
-            		🧍‍♂️ **Human** – _Free to claim_  
-            		> Versatile, balanced, and ever-evolving.
-
-            		---
-
-            		🎯 **How to claim a role**  
-            		Click the button below your chosen role. The keepers of the vault will inspect your worth.
-
-            		✨ May your legend grow ever brighter.
-            		""";
-
+         ✨ May your legend grow ever brighter.
+         """);
+         if(roles.stream().anyMatch(role -> role != null)) {
+        	 
+         }
+         String roleShopMessage = roleMessage.toString();
+         
+         
             shopChannel.retrieveMessageById(pouchShopMessageId).queue(message -> {
                 message.editMessage(pouchShopMessage)
                        .setActionRow(xarinButton, zyraButton,randomButton)
@@ -1101,12 +1118,14 @@ public class Main extends ListenerAdapter
                 int end = Math.min(i + 5, buttons.size());
                 rows.add(ActionRow.of(buttons.subList(i, end)));
             }
-            System.out.println(rows.size());
-            shopChannel.retrieveMessageById(roleShopMessageId).queue(message -> {
-                message.editMessage(roleShopMessage)
-                       .setComponents(rows)
-                       .queue();
-            });
+            
+            if(roles.stream().anyMatch(role -> role != null)) {
+            	 shopChannel.retrieveMessageById(roleShopMessageId).queue(message -> {
+                     message.editMessage(roleShopMessage)
+                            .setComponents(rows)
+                            .queue();
+                 });
+            }
     	    }
         
         
