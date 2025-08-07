@@ -5,7 +5,6 @@ import java.sql.*;
 import java.util.*;
 
 import Currency_nofsc4j.Coin;
-import Currency_nofsc4j.GuildInfo;
 import Currency_nofsc4j.Rarity;
 import Currency_nofsc4j.Vault;
 import Currency_nofsc4j.Xarin;
@@ -48,21 +47,25 @@ public class VaultDAO {
         """;       
 
         String guildInfoSql = """
-            CREATE TABLE IF NOT EXISTS guild_info (
-                shop_channel_id TEXT NOT NULL,
-                intro_channel_id TEXT NOT NULL,
-                role1 TEXT,
-                role2 TEXT,
-                role3 TEXT,
-                role4 TEXT,
-                role5 TEXT,
-                role6 TEXT,
-                role7 TEXT,
-                role8 TEXT,
-                role9 TEXT,
-                role10 TEXT
-            );
-        """; 
+        	    CREATE TABLE IF NOT EXISTS guild_info (
+        	        guild_id TEXT PRIMARY KEY,
+        	        shop_channel_id TEXT,
+        	        intro_channel_id TEXT,
+        	        controle_channelId TEXT,
+        	        pouch_shop_messageId TEXT,
+        	        role_shop_messageId TEXT, 
+        	        role1 TEXT,
+        	        role2 TEXT,
+        	        role3 TEXT,
+        	        role4 TEXT,
+        	        role5 TEXT,
+        	        role6 TEXT,
+        	        role7 TEXT,
+        	        role8 TEXT,
+        	        role9 TEXT,
+        	        role10 TEXT
+        	    );
+        	"""; 
 
         try (Connection conn = connect();
              Statement stmt = conn.createStatement()) {
@@ -75,16 +78,20 @@ public class VaultDAO {
     }
     
     
-    public void setGuildInfo(String shopChannelId, String introChannelId, List<String> roleIds) {
+    public void setGuildInfo(String shopChannelId, String introChannelId,String controleChannelId,String pouchShopMessageId,String roleShopMessageId, List<String> roleIds) {
         String sql = """
             INSERT INTO guild_info (
-                guild_id, shop_channel_id, intro_channel_id,
+                guild_id, shop_channel_id, intro_channel_id,controle_channelId,
+                pouch_shop_messageId,role_shop_messageId,
                 role1, role2, role3, role4, role5,
                 role6, role7, role8, role9, role10
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(guild_id) DO UPDATE SET
                 shop_channel_id = excluded.shop_channel_id,
                 intro_channel_id = excluded.intro_channel_id,
+                pouch_shop_messageId = excluded.pouch_shop_messageId,
+                role_shop_messageId = excluded.role_shop_messageId,
+                controle_channelId = excluded.controle_channelId,
                 role1 = excluded.role1, role2 = excluded.role2, role3 = excluded.role3,
                 role4 = excluded.role4, role5 = excluded.role5, role6 = excluded.role6,
                 role7 = excluded.role7, role8 = excluded.role8, role9 = excluded.role9,
@@ -96,10 +103,12 @@ public class VaultDAO {
             pstmt.setString(1, guildId);
             pstmt.setString(2, shopChannelId);
             pstmt.setString(3, introChannelId);
-
+            pstmt.setString(4, controleChannelId);
+            pstmt.setString(5, pouchShopMessageId);
+            pstmt.setString(6, roleShopMessageId);
             // Fill in up to 10 role IDs (null if missing)
             for (int i = 0; i < 10; i++) {
-                pstmt.setString(4 + i, i < roleIds.size() ? roleIds.get(i) : null);
+                pstmt.setString(7 + i, i < roleIds.size() ? roleIds.get(i) : null);
             }
 
             pstmt.executeUpdate();
@@ -108,33 +117,36 @@ public class VaultDAO {
         }
     }
     
-    public Optional<GuildInfo> getGuildInfo() {
+    public GuildInfo getGuildInfo() {
         String sql = "SELECT * FROM guild_info";
 
         try (Connection conn = connect();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setString(1, guildId);
             ResultSet rs = pstmt.executeQuery();
 
             if (rs.next()) {
                 String shopChannelId = rs.getString("shop_channel_id");
                 String introChannelId = rs.getString("intro_channel_id");
+                String controleChannelId = rs.getString("controle_channelId");
+                String pouchShopMessageId = rs.getString("pouch_shop_messageId");
+                String roleShopMessageId = rs.getString("role_shop_messageId");
 
                 List<String> roles = new ArrayList<>();
                 for (int i = 1; i <= 10; i++) {
                     String roleId = rs.getString("role" + i);
-                    if (roleId != null) roles.add(roleId);
+                    roles.add(roleId);
                 }
 
-                return Optional.of(new GuildInfo(guildId, shopChannelId, introChannelId, roles));
+                return new GuildInfo(guildId, shopChannelId, introChannelId, controleChannelId,
+                                     pouchShopMessageId, roleShopMessageId, roles);
             }
 
         } catch (SQLException e) {
             e.printStackTrace();
         }
-
-        return Optional.empty();
+        return new GuildInfo(null,null,null,null,null,null,new ArrayList<>(Collections.nCopies(10, null)));
     }
+
 
     
         

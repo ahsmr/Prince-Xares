@@ -64,6 +64,7 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
@@ -76,6 +77,7 @@ import Currency_nofsc4j.Rarity;
 import Currency_nofsc4j.Vault;
 import Currency_nofsc4j.Xarin;
 import Currency_nofsc4j.Zyra;
+import DAO.GuildInfo;
 import DAO.VaultDAO;
 import Shop.Pouch;
 
@@ -88,6 +90,34 @@ public class Main extends ListenerAdapter
 	 // Temporary cache to hold coins per user before they decide
 	private List<Coin> coins = new ArrayList<Coin>();
 	
+	private String role1_id;
+	private String role2_id;
+	private String role3_id;
+	private String role4_id;
+	private String role5_id ;
+	private String role6_id;
+	private String role7_id;
+	private String role8_id;
+	private String role9_id;
+	private String role10_id;
+	
+	private Role role1;
+	private Role role2;
+	private Role role3;
+	private Role role4;
+	private Role role5;
+	private Role role6;
+	private Role role7;
+	private Role role8;
+	private Role role9;
+	private Role role10;
+	
+	private String pouchShopMessageId;
+	private String roleShopMessageId;
+	private String introChannelId;
+	private String shopChannelId;
+	private String controleChannelId;
+	
 	/*
 	 * Returns the VaultDAO of a server that is currently used for the events
 	 */
@@ -95,6 +125,73 @@ public class Main extends ListenerAdapter
         return vaultDAOs.computeIfAbsent(guildId, id -> new VaultDAO(id));
     }
     
+    private void loadGuildInfo(String guildId) {
+    	GuildInfo info = getVaultDAO(guildId).getGuildInfo();
+    	pouchShopMessageId = info.getpouchShopMessageId();
+    	roleShopMessageId = info.getroleShopMessageId();
+    	shopChannelId = info.getShopChannelId();
+    	System.out.println(shopChannelId + pouchShopMessageId);
+    	introChannelId = info.getIntroChannelId();
+    	controleChannelId = info.getcontroleChannelId();
+    	List<String> roles = info.getRoleIds();
+    	role1_id = roles.get(0);
+    	role2_id = roles.get(1);
+    	role3_id = roles.get(2);
+    	role4_id = roles.get(3);
+    	role5_id = roles.get(4);
+    	role6_id = roles.get(5);
+    	role7_id = roles.get(6);
+    	role8_id = roles.get(7);
+    	role9_id = roles.get(8);
+    	role10_id = roles.get(9);
+    }
+    
+    private void loadRoles(Guild guild) {
+        role1 = guild.getRoleById(role1_id);
+        role2 = guild.getRoleById(role2_id);
+        role3 = guild.getRoleById(role3_id);
+        role4 = guild.getRoleById(role4_id);
+        role5 = guild.getRoleById(role5_id);
+        role6 = guild.getRoleById(role6_id);
+        role7 = guild.getRoleById(role7_id);
+        role8 = guild.getRoleById(role8_id);
+        role9 = guild.getRoleById(role9_id);
+        role10 = guild.getRoleById(role10_id);
+    }
+    
+    private String getStringOption(SlashCommandInteractionEvent event, String name) {
+        OptionMapping option = event.getOption(name);
+        return option != null ? option.getAsString() : null;
+    }
+    
+    private Role getRoleOption(SlashCommandInteractionEvent event, String name) {
+        OptionMapping option = event.getOption(name);
+        return option != null ? option.getAsRole() : null;
+    }
+
+    private void setGuildInfo(SlashCommandInteractionEvent event) {
+    	VaultDAO dao = getVaultDAO(event.getGuild().getId());
+        String npouchShopMessageId = getStringOption(event, "pouchshopmessageid");
+        String nroleShopMessageId = getStringOption(event, "roleshopmessageid");
+        String nintroChannelId = getStringOption(event, "introchannelid");
+        String nshopChannelId = getStringOption(event, "shopchannelid");
+        String ncontroleChannelId = getStringOption(event, "controlechannelid");
+
+        // Create list of role IDs (as strings)
+        List<String> roleIds = new ArrayList<>();
+        for (int i = 1; i <= 10; i++) {
+            Role role = getRoleOption(event, "role" + i);
+            if (role != null) {
+                roleIds.add(role.getId());
+            }
+        }
+        
+        dao.setGuildInfo(nshopChannelId, nintroChannelId, ncontroleChannelId, npouchShopMessageId, nroleShopMessageId, roleIds);
+        loadGuildInfo(event.getGuild().getId());
+        loadRoles(event.getGuild());
+        event.reply("Your data is succesfully set!").queue();
+
+    }
     
     public static void main(String[] args)
     {
@@ -128,8 +225,8 @@ public class Main extends ListenerAdapter
 
         // You might need to reload your Discord client if you don't see the commands
         CommandListUpdateAction commands = jda.updateCommands();
-
-        // Simple reply commands
+        
+        
         commands.addCommands(
             Commands.slash("say", "Makes the bot say what you tell it to")
                 .setContexts(InteractionContextType.ALL) // Allow the command to be used anywhere (Bot DMs, Guild, Friend DMs, Group DMs)
@@ -138,7 +235,7 @@ public class Main extends ListenerAdapter
                 .setDefaultPermissions(DefaultMemberPermissions.enabledFor(Permission.ADMINISTRATOR))
         );
 
-        // Commands without any inputs
+        
         commands.addCommands(
             Commands.slash("leave", "Make the bot leave the server")
                 // The default integration types are GUILD_INSTALL.
@@ -146,6 +243,30 @@ public class Main extends ListenerAdapter
                 .setContexts(InteractionContextType.GUILD)
                 .setDefaultPermissions(DefaultMemberPermissions.enabledFor(Permission.ADMINISTRATOR)) // only admins should be able to use this command.
         );
+        commands.addCommands(
+        	    Commands.slash("admin-setup", "Personalization for the bot")
+        	        .addOptions(
+        	            new OptionData(OptionType.STRING, "pouchshopmessageid", "Set MessageId for PouchShop"),
+        	            new OptionData(OptionType.STRING, "roleshopmessageid", "Set MessageId for RoleShop"),
+        	            new OptionData(OptionType.STRING, "introchannelid", "Set ChannelId for introChannel"),
+        	            new OptionData(OptionType.STRING, "shopchannelid", "Set ChannelId for shopChannel"),
+        	            new OptionData(OptionType.STRING, "controlechannelid", "Set ChannelId for gaining Crystara!"),
+
+        	            new OptionData(OptionType.ROLE, "role1", "First role for the shop"),
+        	            new OptionData(OptionType.ROLE, "role2", "Second role for the shop"),
+        	            new OptionData(OptionType.ROLE, "role3", "Third role for the shop"),
+        	            new OptionData(OptionType.ROLE, "role4", "Fourth role for the shop"),
+        	            new OptionData(OptionType.ROLE, "role5", "Fifth role for the shop"),
+        	            new OptionData(OptionType.ROLE, "role6", "Sixth role for the shop"),
+        	            new OptionData(OptionType.ROLE, "role7", "Seventh role for the shop"),
+        	            new OptionData(OptionType.ROLE, "role8", "Eighth role for the shop"),
+        	            new OptionData(OptionType.ROLE, "role9", "Ninth role for the shop"),
+        	            new OptionData(OptionType.ROLE, "role10", "Tenth role for the shop")
+        	            
+        	        ).setDefaultPermissions(DefaultMemberPermissions.enabledFor(Permission.ADMINISTRATOR))
+        	        
+        	);
+
         
         commands.addCommands(
         		Commands.slash("stats", "roles or activity")
@@ -230,9 +351,11 @@ public class Main extends ListenerAdapter
                 leave(event);
                 break;
             case "stats":
-                // Just call stats normally; it now defers internally
                 stats(event);
                 break;
+            case "admin-setup":
+            	setGuildInfo(event);
+            	break;
             case "crystara":
             	String guildId1 = event.getGuild().getId();
             	VaultDAO vaultDao1 = getVaultDAO(guildId1);
@@ -469,20 +592,11 @@ public class Main extends ListenerAdapter
         VaultDAO vaultDAO = getVaultDAO(guildId);
         Vault targetVault = vaultDAO.loadVaultForUser(userId);
         int crystara = vaultDAO.getCrystara(userId);
-        
-        
-        
+        Guild guild = event.getGuild();
+        loadGuildInfo(guildId);
         if (buttonId.startsWith("role")) {
-        	 Role role1 = event.getGuild().getRoleById("1389706613803188314");
-        	 Role role2 = event.getGuild().getRoleById("1389706881018232923");
-        	 Role role3 = event.getGuild().getRoleById("1390808600863047801");
-        	 Role role4 = event.getGuild().getRoleById("1396835013185765386");
-        	 Role role5 = event.getGuild().getRoleById("1396834818473459763");
-        	 Role role6 = event.getGuild().getRoleById("1396834669886050478");
-        	 Role role7 = event.getGuild().getRoleById("1396835120962605117");
-        	 Role role8 = event.getGuild().getRoleById("1396835220304564264");
-        	 Role role9 = event.getGuild().getRoleById("1396835368203976774");
-        	 Role role10 = event.getGuild().getRoleById("1396834896579919882");
+        	loadRoles(guild);
+        	
         	int xarinCount = (int) targetVault.getCoins().stream()
     			    .filter(coin -> coin instanceof Xarin)          // Filter by Zyra class
     			    .filter(coin -> coin.getRarity().equals(Rarity.LEGENDARY)) // Filter by legendary rarity (case-insensitive)
@@ -848,13 +962,13 @@ public class Main extends ListenerAdapter
         VaultDAO vaultDAO = new VaultDAO(guildId);
         Vault existingVault = vaultDAO.loadVaultForUser(userId);
         
-        
-
-        // Welcome the user in the intro channel (replace "intro-channel-id" with your channel ID)
-        TextChannel introChannel = event.getGuild().getTextChannelById("1393530608277524551");
+        TextChannel introChannel =null;
+        if(introChannelId != null) {
+            introChannel = event.getGuild().getTextChannelById(introChannelId);
+        }
         if (introChannel != null && existingVault == null) {
             Vault vault = new Vault(guildId, userId);
-            Coin starterCoin = new Zyra(Rarity.RARE, 1);
+            Coin starterCoin = new Zyra(Rarity.RARE, 9);
             vault.addCoin(starterCoin);            
             vaultDAO.saveVault(vault);
             introChannel.sendMessage("Welcome " + event.getUser().getAsMention() + " to the server! Here's a starter coin for you!").queue();
@@ -884,28 +998,34 @@ public class Main extends ListenerAdapter
             String guildId = guild.getId();
             VaultDAO vaultDAO = new VaultDAO(guildId);
             vaultDAOs.put(guildId, vaultDAO);
+            loadGuildInfo(guildId);
+            loadRoles(guild);
         }
+    	System.out.println(1);
+    	TextChannel shopChannel = null;
+    	System.out.println(shopChannelId);
+    	if(shopChannelId != null) {
+            shopChannel = event.getJDA().getTextChannelById(shopChannelId);
+            System.out.println(shopChannel);
+    	}
     	
-    	
-    	String roleMessageId = "1396839361823248557";
-    	String messageId = "1394758917405278309";
-        String channelId = "1394745367240769726";
-        TextChannel shopChannel = event.getJDA().getTextChannelById(channelId);
-
         if (shopChannel != null) {
             Button xarinButton = Button.secondary("buy_xarin", "Buy Xarin Pouch");
             Button zyraButton = Button.secondary("buy_zyra", "Buy Zyra Pouch");
             Button randomButton = Button.secondary("buy_random", "Buy Random Pouch");
-            Button role1 = Button.secondary("role1", "Vault Viewer");
-            Button role2 = Button.secondary("role2", "Cool One");
-            Button role3 = Button.secondary("role3", "Wise child");
-            Button role4 = Button.secondary("role4", "Elder God");
-            Button role5 = Button.secondary("role5", "God");
-            Button role6 = Button.secondary("role6", "Immortal");
-            Button role7 = Button.secondary("role7", "Elf");
-            Button role8 = Button.secondary("role8", "Demon");
-            Button role9 = Button.secondary("role9", "Dwarf");
-            Button role10 = Button.secondary("role10", "Human");
+            System.out.println(2);
+            List<Role> roles = Arrays.asList(role1, role2, role3, role4, role5, role6, role7, role8, role9, role10);
+
+            List<Button> buttons = new ArrayList<>();
+
+            for (int i = 0; i < roles.size(); i++) {
+                Role role = roles.get(i);
+                if (role != null) {
+                    String buttonId = "role" + (i + 1);
+                    buttons.add(Button.secondary(buttonId, role.getName()));
+                }}
+            System.out.println(3);
+            
             String pouchShopMessage = """
             		🔮 **Welcome, seeker, to the Arcane Pouch Emporium!**
 
@@ -969,23 +1089,24 @@ public class Main extends ListenerAdapter
             		✨ May your legend grow ever brighter.
             		""";
 
-            shopChannel.retrieveMessageById(messageId).queue(message -> {
+            shopChannel.retrieveMessageById(pouchShopMessageId).queue(message -> {
                 message.editMessage(pouchShopMessage)
                        .setActionRow(xarinButton, zyraButton,randomButton)
                        .queue();  // <-- this is the only queue() needed
             });
-            shopChannel.retrieveMessageById(roleMessageId).queue(message -> {
-                message.editMessage(roleShopMessage) // Update the content
-                       .setComponents(
-                           ActionRow.of(role1, role2, role3, role4, role5),
-                           ActionRow.of(role6, role7, role8, role9, role10)
-                       )
-                       .queue(); // Very important!
-            });
-
-
-
             
+         // Split buttons into action rows (max 5 per row)
+            List<ActionRow> rows = new ArrayList<>();
+            for (int i = 0; i < buttons.size(); i += 5) {
+                int end = Math.min(i + 5, buttons.size());
+                rows.add(ActionRow.of(buttons.subList(i, end)));
+            }
+            System.out.println(rows.size());
+            shopChannel.retrieveMessageById(roleShopMessageId).queue(message -> {
+                message.editMessage(roleShopMessage)
+                       .setComponents(rows)
+                       .queue();
+            });
     	    }
         
         
@@ -996,8 +1117,8 @@ public class Main extends ListenerAdapter
         LocalDate firstDayOfMonth = today.withDayOfMonth(23);
         
         if (today.equals(firstDayOfMonth)) {
-        	String funChannelId = "1396207168998477994";
-            TextChannel funChannel = event.getJDA().getTextChannelById(funChannelId);
+
+            TextChannel funChannel = event.getJDA().getTextChannelById(controleChannelId);
             String thumbsUp = "👍";
             String thumbsDown = "👎";
             if (funChannel != null) {
