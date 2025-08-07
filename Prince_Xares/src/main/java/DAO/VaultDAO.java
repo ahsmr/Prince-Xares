@@ -2,6 +2,7 @@ package DAO;
 
 import java.io.File;
 import java.sql.*;
+import java.time.LocalDateTime;
 import java.util.*;
 
 import Currency_nofsc4j.Coin;
@@ -66,17 +67,71 @@ public class VaultDAO {
         	        role10 TEXT
         	    );
         	"""; 
+        String eventTime = """
+        		CREATE TABLE IF NOT EXISTS event_time(
+        		start_event TIMESTAMP,
+        		end_event TIMESTAMP
+        		);
+        		""";
 
         try (Connection conn = connect();
              Statement stmt = conn.createStatement()) {
             stmt.execute(coinSql);
             stmt.execute(crystaraSql);
             stmt.execute(guildInfoSql);
+            stmt.execute(eventTime);
         } catch (SQLException e) {
             e.printStackTrace();
         }
     }
     
+    public void setEventTime(LocalDateTime start, LocalDateTime end) {
+        String sql = "UPDATE event_time SET start_event = ?, end_event = ?";
+
+        try (Connection conn = connect();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setTimestamp(1, Timestamp.valueOf(start));
+            pstmt.setTimestamp(2, Timestamp.valueOf(end));
+
+            int rowsAffected = pstmt.executeUpdate();
+
+            // Optional: if no row exists, insert it
+            if (rowsAffected == 0) {
+                try (PreparedStatement insertStmt = conn.prepareStatement(
+                        "INSERT INTO event_time (start_event, end_event) VALUES (?, ?)")) {
+                    insertStmt.setTimestamp(1, Timestamp.valueOf(start));
+                    insertStmt.setTimestamp(2, Timestamp.valueOf(end));
+                    insertStmt.executeUpdate();
+                }
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+    
+    public List<LocalDateTime> getEventTime() {
+        String sql = "SELECT * FROM event_time";
+
+        try (Connection conn = connect();
+             PreparedStatement pstmt = conn.prepareStatement(sql);
+             ResultSet rs = pstmt.executeQuery()) {
+
+            if (rs.next()) { 
+                return List.of(
+                    rs.getTimestamp("start_event").toLocalDateTime(),
+                    rs.getTimestamp("end_event").toLocalDateTime()
+                );
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return new ArrayList<>(Collections.nCopies(2, null));
+    }
+
     
     public void setGuildInfo(String shopChannelId, String introChannelId,String controleChannelId,String pouchShopMessageId,String roleShopMessageId, List<String> roleIds) {
         String sql = """
@@ -144,12 +199,10 @@ public class VaultDAO {
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        return new GuildInfo(null,null,null,null,null,null,new ArrayList<>(Collections.nCopies(10, null)));
+        return new GuildInfo(null,null,null,null,null,null,new ArrayList<String>(Collections.nCopies(10, null)));
     }
 
-
-    
-        
+      
     public int getCrystara(String userId) {
         String sql = "SELECT amount FROM crystara WHERE user_id = ? AND guild_id = ?";
         try (Connection conn = connect();
@@ -214,7 +267,6 @@ public class VaultDAO {
             e.printStackTrace();
         }
     }
-
 
     public List<Coin> loadCoins(String userId, String guildId) {
         List<Coin> coins = new ArrayList<>();
@@ -320,7 +372,6 @@ public class VaultDAO {
         }
     }
     
-    
     public void deleteAllCoinsForUser(String userId) {
         String sql = "DELETE FROM coins WHERE user_id = ? AND guild_id = ?";
         try (Connection conn = connect();
@@ -378,8 +429,5 @@ public class VaultDAO {
             System.err.println("DB file does not exist at: " + dbPath);
         }
     }
-
-    
-
 
 }

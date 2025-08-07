@@ -19,6 +19,7 @@ import net.dv8tion.jda.api.events.guild.member.GuildMemberRemoveEvent;
 import net.dv8tion.jda.api.events.guild.voice.GuildVoiceUpdateEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
+import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.events.session.ReadyEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.IntegrationType;
@@ -57,7 +58,9 @@ import java.net.URL;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumSet;
@@ -188,9 +191,168 @@ public class Main extends ListenerAdapter
         dao.setGuildInfo(nshopChannelId, nintroChannelId, ncontroleChannelId, npouchShopMessageId, nroleShopMessageId, roleIds);
         loadGuildInfo(event.getGuild().getId());
         loadRoles(event.getGuild());
+        updateShop(event);
         event.reply("Your data is succesfully set!").queue();
 
     }
+    
+    private void setEvent(SlashCommandInteractionEvent event) {
+    	String startInput = event.getOption("start") == null? null :event.getOption("start").toString();
+    	String endInput = event.getOption("end") == null? null :event.getOption("end").toString();
+    	if(startInput != endInput && (endInput == null || startInput == null) ) {
+    		event.reply("You have to set both start and end!").queue();
+    		return;
+    	}
+    	else if (startInput == endInput && startInput == null) {
+    		VaultDAO dao = getVaultDAO(event.getGuild().getId());
+    		dao.setEventTime(null, null);
+    		event.reply("Event set as Eternal!").queue();
+    		return;
+    	}
+    	else {
+    		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm");
+    		LocalDateTime startTime = LocalDateTime.parse(startInput,formatter);
+    		LocalDateTime endTime = LocalDateTime.parse(endInput,formatter);
+    		VaultDAO dao = getVaultDAO(event.getGuild().getId());
+    		dao.setEventTime(startTime, endTime);
+    	}
+    }
+    
+    private void updateShop(SlashCommandInteractionEvent event) {
+    	for (Guild guild : event.getJDA().getGuilds()) {
+            String guildId = guild.getId();
+            VaultDAO vaultDAO = new VaultDAO(guildId);
+            vaultDAOs.put(guildId, vaultDAO);
+        }
+    	TextChannel shopChannel = null;
+    	if(shopChannelId != null) {
+            shopChannel = event.getJDA().getTextChannelById(shopChannelId);    	}
+    	
+        if (shopChannel != null) {
+            Button xarinButton = Button.secondary("buy_xarin", "Buy Xarin Pouch");
+            Button zyraButton = Button.secondary("buy_zyra", "Buy Zyra Pouch");
+            Button randomButton = Button.secondary("buy_random", "Buy Random Pouch");
+            
+            List<Role> roles = Arrays.asList(role1, role2, role3, role4, role5, role6, role7, role8, role9, role10);
+            List<Button> buttons = new ArrayList<>();
+
+            for (int i = 0; i < roles.size(); i++) {
+                Role role = roles.get(i);
+                if (role != null) {
+                    String buttonId = "role" + (i + 1);
+                    buttons.add(Button.secondary(buttonId, role.getName()));
+                }}            
+            
+            
+            String pouchShopMessage = """
+            		🔮 **Welcome, seeker, to the Arcane Pouch Emporium!**
+
+            		Within these enchanted satchels lie treasures unknown. Select a pouch below, and may fate favor your draw:
+
+            		🟡 **Xarin Pouch** — 100 💎𝓒  
+            		> Forged in the golden forges of the Flamevault. Rich with power and rarity.
+
+            		🟣 **Zyra Pouch** — 100 💎𝓒  
+            		> Whispered into being by shadow and starlight. Mysterious and potent.
+
+            		🎲 **Random Pouch** — 60 💎𝓒  
+            		> A gamble of the gods. Will fortune bless you... or test you?
+
+            		🛍️ **Choose wisely, and may the coins guide your destiny.**
+            		""";
+
+         // Emojis, names, and descriptions for each role slot
+         String[] emojis = {
+             "🔍", "😎", "🧠", "👴", "👑", "♾️", "🌿", "🔥", "⚒️", "🧍‍♂️"
+         };
+
+         String[] requirements = {
+             "_5x **Legendary Level 10 Xarin**, 5x **Legendary Level 10 Zyra**_",
+             "_1x **Legendary Level 10 Zyra Coin**_",
+             "_1x **Legendary Level 10 Xarin Coin**_",
+             "_1x **Legendary Level 1 Xarin**, 1x **Legendary Level 1 Zyra**, 5000 💎𝓒 _",
+             "_1x **Legendary Level 1 Xarin**, 1x **Legendary Level 1 Zyra**_",
+             "_1x **Legendary Level 1 Coin** (any type)_",
+             "_**4000** 💎𝓒_",
+             "_**4000** 💎𝓒_",
+             "_**2000** 💎𝓒_",
+             "_Free to claim_"
+         };
+
+         String[] flavorTexts = {
+             "> Guardians of the vaults, trusted with secrets few may hold.",
+             "> Only the chillest may wield this title.",
+             "> Youthful and brilliant. A rare combination.",
+             "> The oldest of powers... only few remember your name.",
+             "> You walk among mortals, but you are far beyond.",
+             "> Death has no claim on you.",
+             "> One with nature, fast and graceful.",
+             "> Fire, chaos, and shadows obey your will.",
+             "> Master of craftsmanship and strongholds.",
+             "> Versatile, balanced, and ever-evolving."
+         };
+
+         // Start building the message
+         StringBuilder roleMessage = new StringBuilder();
+
+         roleMessage.append("""
+         🏰 **Welcome, traveler, to the Hall of Titles**
+
+         Here you may claim powerful roles — but each title comes with a price. Prove your worth, and the realm shall recognize you.
+
+         ---
+
+         """);
+
+         // Dynamically add each non-null role
+         for (int i = 0; i < roles.size(); i++) {
+             Role role = roles.get(i);
+             if(role != null) {
+            	 roleMessage.append(emojis[i]).append(" **").append(role.getName()).append("** – ")
+                 .append(requirements[i]).append("\n")
+                 .append(flavorTexts[i]).append("\n\n");
+             }
+             
+         }
+
+         // Add the footer
+         roleMessage.append("""
+         ---
+
+         🎯 **How to claim a role**  
+         Click the button below your chosen role. The keepers of the vault will inspect your worth.
+
+         ✨ May your legend grow ever brighter.
+         """);
+         if(roles.stream().anyMatch(role -> role != null)) {
+        	 
+         }
+         String roleShopMessage = roleMessage.toString();
+         
+         
+            shopChannel.retrieveMessageById(pouchShopMessageId).queue(message -> {
+                message.editMessage(pouchShopMessage)
+                       .setActionRow(xarinButton, zyraButton,randomButton)
+                       .queue();  // <-- this is the only queue() needed
+            });
+            
+         // Split buttons into action rows (max 5 per row)
+            List<ActionRow> rows = new ArrayList<>();
+            for (int i = 0; i < buttons.size(); i += 5) {
+                int end = Math.min(i + 5, buttons.size());
+                rows.add(ActionRow.of(buttons.subList(i, end)));
+            }
+            
+            if(roles.stream().anyMatch(role -> role != null)) {
+            	 shopChannel.retrieveMessageById(roleShopMessageId).queue(message -> {
+                     message.editMessage(roleShopMessage)
+                            .setComponents(rows)
+                            .queue();
+                 });
+            }
+    	    }
+    }
+    
     
     public static void main(String[] args)
     {
@@ -242,6 +404,16 @@ public class Main extends ListenerAdapter
                 .setContexts(InteractionContextType.GUILD)
                 .setDefaultPermissions(DefaultMemberPermissions.enabledFor(Permission.ADMINISTRATOR)) // only admins should be able to use this command.
         );
+        
+        
+        commands.addCommands(
+        		Commands.slash("event", "Setup for the Event")
+        		.addOptions(
+        				new OptionData(OptionType.STRING,"start","Start of the Event (e.g. 2025-08-10T15:30)"),
+        				new OptionData(OptionType.STRING,"end","End of the Event (e.g. 2025-08-10T15:30)")
+        				).setDefaultPermissions(DefaultMemberPermissions.enabledFor(Permission.ADMINISTRATOR)));
+        
+        
         commands.addCommands(
         	    Commands.slash("admin-setup", "Personalization for the bot")
         	        .addOptions(
@@ -352,6 +524,9 @@ public class Main extends ListenerAdapter
             case "stats":
                 stats(event);
                 break;
+            case "event":
+            	setEvent(event);
+            	break;
             case "admin-setup":
             	setGuildInfo(event);
             	break;
@@ -949,6 +1124,43 @@ public class Main extends ListenerAdapter
         // Handle other buttons here if needed...
     }
   
+    @Override
+    public void onMessageReceived(MessageReceivedEvent event) {
+    	VaultDAO dao = getVaultDAO(event.getGuild().getId());
+    	LocalDateTime startEvent = dao.getEventTime().get(0);
+    	LocalDateTime endEvent = dao.getEventTime().get(1);
+    	System.out.println(startEvent+" | "+endEvent);
+    	LocalDateTime now = LocalDateTime.now();
+   
+    	if(event.getChannel().getId().equals(controleChannelId)) {
+    		
+    		if((startEvent == endEvent && startEvent == null) ||(now.isAfter(startEvent) && now.isBefore(endEvent)) ) {
+    			
+        		TextChannel funChannel = event.getJDA().getTextChannelById(controleChannelId);
+                String thumbsUp = "👍";
+                String thumbsDown = "👎";
+                if (funChannel != null) {
+                	funChannel.getHistory().retrievePast(100).queue(messages -> {           		
+                        for (Message message : messages) {
+                        	String authorId = message.getAuthor().getId();
+                            String guildId = funChannel.getGuild().getId();
+                            VaultDAO vaultDAO = vaultDAOs.get(guildId);
+                            List<MessageReaction> reactions = message.getReactions();
+                            for (MessageReaction reaction : reactions) {
+                            	String emoji = reaction.getEmoji().getFormatted();
+                            	if (emoji.equals(thumbsDown) || emoji.equals(thumbsUp)) {
+                                    int count = emoji.equals(thumbsUp) ?  reaction.getCount()*5: reaction.getCount();
+                                    vaultDAO.addCrystara(authorId, count);
+                            	}
+                            }
+                        }
+                    });
+                }
+        	}
+    	}
+    	
+    	
+    }
     /*
      * Override methode from JDA library
      */
@@ -993,178 +1205,12 @@ public class Main extends ListenerAdapter
     @Override
     public void onReady(ReadyEvent event) {
     	// Put all the guildIds in the vaultDaos just in case 
-    	for (Guild guild : event.getJDA().getGuilds()) {
-            String guildId = guild.getId();
-            VaultDAO vaultDAO = new VaultDAO(guildId);
-            vaultDAOs.put(guildId, vaultDAO);
-            loadGuildInfo(guildId);
-            loadRoles(guild);
-        }
-    	TextChannel shopChannel = null;
-    	if(shopChannelId != null) {
-            shopChannel = event.getJDA().getTextChannelById(shopChannelId);    	}
     	
-        if (shopChannel != null) {
-            Button xarinButton = Button.secondary("buy_xarin", "Buy Xarin Pouch");
-            Button zyraButton = Button.secondary("buy_zyra", "Buy Zyra Pouch");
-            Button randomButton = Button.secondary("buy_random", "Buy Random Pouch");
-            
-            List<Role> roles = Arrays.asList(role1, role2, role3, role4, role5, role6, role7, role8, role9, role10);
-            List<Button> buttons = new ArrayList<>();
-
-            for (int i = 0; i < roles.size(); i++) {
-                Role role = roles.get(i);
-                if (role != null) {
-                    String buttonId = "role" + (i + 1);
-                    buttons.add(Button.secondary(buttonId, role.getName()));
-                }}            
-            
-            
-            String pouchShopMessage = """
-            		🔮 **Welcome, seeker, to the Arcane Pouch Emporium!**
-
-            		Within these enchanted satchels lie treasures unknown. Select a pouch below, and may fate favor your draw:
-
-            		🟡 **Xarin Pouch** — 100 💎𝓒  
-            		> Forged in the golden forges of the Flamevault. Rich with power and rarity.
-
-            		🟣 **Zyra Pouch** — 100 💎𝓒  
-            		> Whispered into being by shadow and starlight. Mysterious and potent.
-
-            		🎲 **Random Pouch** — 60 💎𝓒  
-            		> A gamble of the gods. Will fortune bless you... or test you?
-
-            		🛍️ **Choose wisely, and may the coins guide your destiny.**
-            		""";
-
-         // Emojis, names, and descriptions for each role slot
-         String[] emojis = {
-             "🔍", "😎", "🧠", "👴", "👑", "♾️", "🌿", "🔥", "⚒️", "🧍‍♂️"
-         };
-
-         String[] requirements = {
-             "_5x **Legendary Level 10 Xarin**, 5x **Legendary Level 10 Zyra**_",
-             "_1x **Legendary Level 10 Zyra Coin**_",
-             "_1x **Legendary Level 10 Xarin Coin**_",
-             "_1x **Legendary Level 1 Xarin**, 1x **Legendary Level 1 Zyra**, 5000 💎𝓒 _",
-             "_1x **Legendary Level 1 Xarin**, 1x **Legendary Level 1 Zyra**_",
-             "_1x **Legendary Level 1 Coin** (any type)_",
-             "_**4000** 💎𝓒_",
-             "_**4000** 💎𝓒_",
-             "_**2000** 💎𝓒_",
-             "_Free to claim_"
-         };
-
-         String[] flavorTexts = {
-             "> Guardians of the vaults, trusted with secrets few may hold.",
-             "> Only the chillest may wield this title.",
-             "> Youthful and brilliant. A rare combination.",
-             "> The oldest of powers... only few remember your name.",
-             "> You walk among mortals, but you are far beyond.",
-             "> Death has no claim on you.",
-             "> One with nature, fast and graceful.",
-             "> Fire, chaos, and shadows obey your will.",
-             "> Master of craftsmanship and strongholds.",
-             "> Versatile, balanced, and ever-evolving."
-         };
-
-         // Start building the message
-         StringBuilder roleMessage = new StringBuilder();
-
-         roleMessage.append("""
-         🏰 **Welcome, traveler, to the Hall of Titles**
-
-         Here you may claim powerful roles — but each title comes with a price. Prove your worth, and the realm shall recognize you.
-
-         ---
-
-         """);
-
-         // Dynamically add each non-null role
-         for (int i = 0; i < roles.size(); i++) {
-             Role role = roles.get(i);
-             if(role != null) {
-            	 roleMessage.append(emojis[i]).append(" **").append(role.getName()).append("** – ")
-                 .append(requirements[i]).append("\n")
-                 .append(flavorTexts[i]).append("\n\n");
-             }
-             
-         }
-
-         // Add the footer
-         roleMessage.append("""
-         ---
-
-         🎯 **How to claim a role**  
-         Click the button below your chosen role. The keepers of the vault will inspect your worth.
-
-         ✨ May your legend grow ever brighter.
-         """);
-         if(roles.stream().anyMatch(role -> role != null)) {
-        	 
-         }
-         String roleShopMessage = roleMessage.toString();
-         
-         
-            shopChannel.retrieveMessageById(pouchShopMessageId).queue(message -> {
-                message.editMessage(pouchShopMessage)
-                       .setActionRow(xarinButton, zyraButton,randomButton)
-                       .queue();  // <-- this is the only queue() needed
-            });
-            
-         // Split buttons into action rows (max 5 per row)
-            List<ActionRow> rows = new ArrayList<>();
-            for (int i = 0; i < buttons.size(); i += 5) {
-                int end = Math.min(i + 5, buttons.size());
-                rows.add(ActionRow.of(buttons.subList(i, end)));
-            }
-            
-            if(roles.stream().anyMatch(role -> role != null)) {
-            	 shopChannel.retrieveMessageById(roleShopMessageId).queue(message -> {
-                     message.editMessage(roleShopMessage)
-                            .setComponents(rows)
-                            .queue();
-                 });
-            }
-    	    }
-        
-        
-      
-        
-       //Calculate the crystaras for all memebers at the first day of the month
-        LocalDate today = LocalDate.now();
-        LocalDate firstDayOfMonth = today.withDayOfMonth(23);
-        
-        if (today.equals(firstDayOfMonth)) {
-
-            TextChannel funChannel = event.getJDA().getTextChannelById(controleChannelId);
-            String thumbsUp = "👍";
-            String thumbsDown = "👎";
-            if (funChannel != null) {
-            	funChannel.getHistory().retrievePast(100).queue(messages -> {           		
-                    for (Message message : messages) {
-                    	String authorId = message.getAuthor().getId();
-                        String guildId = funChannel.getGuild().getId();
-                        VaultDAO vaultDAO = vaultDAOs.get(guildId);
-                        List<MessageReaction> reactions = message.getReactions();
-                        for (MessageReaction reaction : reactions) {
-                        	String emoji = reaction.getEmoji().getFormatted();
-                        	if (emoji.equals(thumbsDown) || emoji.equals(thumbsUp)) {
-                                int count = emoji.equals(thumbsUp) ?  reaction.getCount()*100000: reaction.getCount();
-                                vaultDAO.addCrystara(authorId, count);
-                        	}
-                            
-
-                        }
-                    }
-                });
-            }
-        	
-            
-        }
         JDA jda = event.getJDA();
         for (Guild guild : jda.getGuilds()) {  
             VaultDAO dao = new VaultDAO(guild.getId());
+            loadGuildInfo(guild.getId());
+            loadRoles(guild);
         }
     }
    
