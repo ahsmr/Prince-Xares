@@ -20,6 +20,8 @@ import net.dv8tion.jda.api.events.guild.voice.GuildVoiceUpdateEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent;
+import net.dv8tion.jda.api.events.message.react.MessageReactionRemoveEvent;
 import net.dv8tion.jda.api.events.session.ReadyEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.IntegrationType;
@@ -197,8 +199,8 @@ public class Main extends ListenerAdapter
     }
     
     private void setEvent(SlashCommandInteractionEvent event) {
-    	String startInput = event.getOption("start") == null? null :event.getOption("start").toString();
-    	String endInput = event.getOption("end") == null? null :event.getOption("end").toString();
+    	String startInput = event.getOption("start") == null? null :event.getOption("start").getAsString();
+    	String endInput = event.getOption("end") == null? null :event.getOption("end").getAsString();
     	if(startInput != endInput && (endInput == null || startInput == null) ) {
     		event.reply("You have to set both start and end!").queue();
     		return;
@@ -210,11 +212,12 @@ public class Main extends ListenerAdapter
     		return;
     	}
     	else {
-    		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm");
+    		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
     		LocalDateTime startTime = LocalDateTime.parse(startInput,formatter);
     		LocalDateTime endTime = LocalDateTime.parse(endInput,formatter);
     		VaultDAO dao = getVaultDAO(event.getGuild().getId());
     		dao.setEventTime(startTime, endTime);
+    		event.reply("The event is set From: "+startTime + " To: "+endTime).setEphemeral(true).queue();
     	}
     }
     
@@ -375,6 +378,7 @@ public class Main extends ListenerAdapter
         JDA jda = JDABuilder.createDefault(token,
         										GatewayIntent.GUILD_MEMBERS,
         										GatewayIntent.GUILD_MESSAGES,
+        										GatewayIntent.GUILD_MESSAGE_REACTIONS,
         										GatewayIntent.GUILD_EXPRESSIONS,
         										GatewayIntent.SCHEDULED_EVENTS
         										)
@@ -409,8 +413,8 @@ public class Main extends ListenerAdapter
         commands.addCommands(
         		Commands.slash("event", "Setup for the Event")
         		.addOptions(
-        				new OptionData(OptionType.STRING,"start","Start of the Event (e.g. 2025-08-10T15:30)"),
-        				new OptionData(OptionType.STRING,"end","End of the Event (e.g. 2025-08-10T15:30)")
+        				new OptionData(OptionType.STRING,"start","Start of the Event (e.g. 2025-08-10 15:30)"),
+        				new OptionData(OptionType.STRING,"end","End of the Event (e.g. 2025-08-10 15:30)")
         				).setDefaultPermissions(DefaultMemberPermissions.enabledFor(Permission.ADMINISTRATOR)));
         
         
@@ -1125,41 +1129,81 @@ public class Main extends ListenerAdapter
     }
   
     @Override
-    public void onMessageReceived(MessageReceivedEvent event) {
-    	VaultDAO dao = getVaultDAO(event.getGuild().getId());
-    	LocalDateTime startEvent = dao.getEventTime().get(0);
-    	LocalDateTime endEvent = dao.getEventTime().get(1);
-    	System.out.println(startEvent+" | "+endEvent);
-    	LocalDateTime now = LocalDateTime.now();
-   
-    	if(event.getChannel().getId().equals(controleChannelId)) {
-    		
-    		if((startEvent == endEvent && startEvent == null) ||(now.isAfter(startEvent) && now.isBefore(endEvent)) ) {
-    			
-        		TextChannel funChannel = event.getJDA().getTextChannelById(controleChannelId);
-                String thumbsUp = "👍";
-                String thumbsDown = "👎";
-                if (funChannel != null) {
-                	funChannel.getHistory().retrievePast(100).queue(messages -> {           		
-                        for (Message message : messages) {
-                        	String authorId = message.getAuthor().getId();
-                            String guildId = funChannel.getGuild().getId();
-                            VaultDAO vaultDAO = vaultDAOs.get(guildId);
-                            List<MessageReaction> reactions = message.getReactions();
-                            for (MessageReaction reaction : reactions) {
-                            	String emoji = reaction.getEmoji().getFormatted();
-                            	if (emoji.equals(thumbsDown) || emoji.equals(thumbsUp)) {
-                                    int count = emoji.equals(thumbsUp) ?  reaction.getCount()*5: reaction.getCount();
-                                    vaultDAO.addCrystara(authorId, count);
-                            	}
-                            }
-                        }
-                    });
-                }
-        	}
-    	}
-    	
-    	
+    public void onMessageReactionAdd(MessageReactionAddEvent event) {
+  
+        // Ignore bots
+        if (event.getUser() == null || event.getUser().isBot()) return;
+
+        // Only process reactions in the specific channel
+        if (!event.getChannel().getId().equals(controleChannelId)) return;
+        // Their own reaction doesn't count 
+        if(event.getMessageAuthorId().equals(event.getUserId())) return;
+        // Get event time range from DB
+        VaultDAO dao = getVaultDAO(event.getGuild().getId());
+        LocalDateTime startEvent = dao.getEventTime().get(0);
+        LocalDateTime endEvent   = dao.getEventTime().get(1);
+        LocalDateTime now        = LocalDateTime.now();
+        
+        // Check if event is "eternal" or within the time range
+        boolean isEternal = (startEvent == null && endEvent == null);
+        if (!(isEternal || (now.isAfter(startEvent) && now.isBefore(endEvent)))) {
+            return;
+        }
+     
+        // Award Crystara for 👍 or 👎
+        String emoji = event.getReaction().getEmoji().getName();
+        String thumbsUp = "👍";
+        String thumbsDown = "👎";
+
+        if (emoji.equals(thumbsUp) || emoji.equals(thumbsDown)) {
+            // Fetch the original message to know the author
+        	
+            event.retrieveMessage().queue(message -> {
+                String authorId = message.getAuthor().getId();
+                String guildId  = event.getGuild().getId();
+                VaultDAO vaultDAO = vaultDAOs.get(guildId);
+
+                int points = emoji.equals(thumbsUp) ? 5 : 1;
+                
+                vaultDAO.addCrystara(authorId, points);
+            });
+        }
+    }
+    
+    @Override
+    public void onMessageReactionRemove(MessageReactionRemoveEvent event) {
+        // Ignore if no user info (rare) or if bot (reaction removed by bot itself)
+        if (event.getUserId() == null) return;
+
+        // Only handle specific channel
+        if (!event.getChannel().getId().equals(controleChannelId)) return;
+
+        VaultDAO dao = getVaultDAO(event.getGuild().getId());
+        LocalDateTime startEvent = dao.getEventTime().get(0);
+        LocalDateTime endEvent = dao.getEventTime().get(1);
+        LocalDateTime now = LocalDateTime.now();
+
+        boolean isEternal = (startEvent == null && endEvent == null);
+        if (!(isEternal || (now.isAfter(startEvent) && now.isBefore(endEvent)))) {
+            return;
+        }
+
+        String emoji = event.getReaction().getEmoji().getName();
+        String thumbsUp = "👍";
+        String thumbsDown = "👎";
+
+        if (emoji.equals(thumbsUp) || emoji.equals(thumbsDown)) {
+            // Retrieve the message to find author
+            event.retrieveMessage().queue(message -> {
+                String authorId = message.getAuthor().getId();
+                String guildId = event.getGuild().getId();
+                VaultDAO vaultDAO = vaultDAOs.get(guildId);
+
+                int points = emoji.equals(thumbsUp) ? 5 : 1;
+                // Subtract Crystara because reaction was removed
+                vaultDAO.removeCrystara(authorId, points);
+            });
+        }
     }
     /*
      * Override methode from JDA library

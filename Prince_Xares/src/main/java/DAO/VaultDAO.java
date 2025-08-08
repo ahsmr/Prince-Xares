@@ -91,8 +91,8 @@ public class VaultDAO {
         try (Connection conn = connect();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-            pstmt.setTimestamp(1, Timestamp.valueOf(start));
-            pstmt.setTimestamp(2, Timestamp.valueOf(end));
+            pstmt.setTimestamp(1, start == null ? null : Timestamp.valueOf(start));
+            pstmt.setTimestamp(2, end == null ? null : Timestamp.valueOf(end));
 
             int rowsAffected = pstmt.executeUpdate();
 
@@ -119,10 +119,13 @@ public class VaultDAO {
              ResultSet rs = pstmt.executeQuery()) {
 
             if (rs.next()) { 
-                return List.of(
-                    rs.getTimestamp("start_event").toLocalDateTime(),
-                    rs.getTimestamp("end_event").toLocalDateTime()
-                );
+            	ArrayList<LocalDateTime> result = new ArrayList<LocalDateTime>();
+            	result.add(rs.getTimestamp("start_event") == null ? 
+            			null :rs.getTimestamp("start_event").toLocalDateTime());
+            	
+            	result.add(rs.getTimestamp("end_event") == null ?
+            			null : rs.getTimestamp("end_event").toLocalDateTime());
+                return result;
             }
 
         } catch (SQLException e) {
