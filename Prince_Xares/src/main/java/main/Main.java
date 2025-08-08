@@ -416,7 +416,7 @@ public class Main extends ListenerAdapter
         				new OptionData(OptionType.STRING,"start","Start of the Event (e.g. 2025-08-10 15:30)"),
         				new OptionData(OptionType.STRING,"end","End of the Event (e.g. 2025-08-10 15:30)")
         				).setDefaultPermissions(DefaultMemberPermissions.enabledFor(Permission.ADMINISTRATOR)));
-        
+         
         
         commands.addCommands(
         	    Commands.slash("admin-setup", "Personalization for the bot")
