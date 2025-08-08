@@ -32,18 +32,21 @@
 | `remove`     | Remove a coin from your vault by specifying its Coin ID.                                    |
 | `clear`      | Clear your entire vault (can be restricted to admins or the vault owner).                   |
 ### Crystara_usage for upgrading each Coin:
-![crystara_usage](https://github.com/user-attachments/assets/f90e8dce-96aa-4b30-a641-23247e60eccb)
+![crystara_usage](https://github.com/user-attachments/assets/2f63abb4-f2b5-4039-ad19-274dc52e731b)
+
 
     
 ### Shop Feature
 - The bot includes a **shop system** where admins can select a channel for the shop.
 - The shop automatically creates **two messages**:
   1. **Pouch Shop** — Users can buy pouches using **Crystara** currency.
-    - Visual Example : <img width="1069" height="503" alt="image" src="https://github.com/user-attachments/assets/35bb9553-9bd8-4563-8eaa-85c43f587804" />
+    - Visual Example : <img width="1094" height="529" alt="image" src="https://github.com/user-attachments/assets/8d7c42f7-3547-443f-8563-5de1af5dd8a6" />
+
   2. **Role Shop** — Users can purchase roles using either **Crystara** or **coins**.
       - Visual Example :
-        <img width="1103" height="806" alt="image" src="https://github.com/user-attachments/assets/49bc56ad-c9ad-4475-b94d-7da3c2096896" />
-        <img width="1100" height="595" alt="image" src="https://github.com/user-attachments/assets/feb197fa-8c87-4819-ba09-ce57b73c74fa" />
+        <img width="1080" height="813" alt="image" src="https://github.com/user-attachments/assets/e150626f-4a58-4bd2-9f8e-3f33a614b7a3" />
+
+        <img width="968" height="600" alt="image" src="https://github.com/user-attachments/assets/432e7de6-af02-47ec-ac1d-56d7f4a3acac" />
 
 
         
@@ -61,7 +64,8 @@
 Vaults are represented as in-memory image files generated dynamically using `BufferedImage`. No file writes or persistent image caching are used — everything is built and sent in real-time with profile pictures and layout logic.(All the images are AI generated)
 
 Example output (visualized):
-<img width="1012" height="610" alt="image" src="https://github.com/user-attachments/assets/3fa0f298-d61a-45ba-bd23-694e94eeacf3" />
+<img width="1013" height="615" alt="image" src="https://github.com/user-attachments/assets/dc40f173-8b77-4d91-b87f-8ea47f2b063a" />
+
 
 
 ## To install the bot in your server:
